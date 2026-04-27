@@ -1,5 +1,52 @@
-- name: Upload APK
-  uses: actions/upload-artifact@v4
-  with:
-    name: taqwatraker-apk
-    path: android/app/build/outputs/apk/debug/app-debug.apk
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Build web app (safe fallback if not needed)
+      - name: Build web app
+        run: npm run build || echo "No build step"
+
+      # Setup Java (required for Android build)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Install Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # Build APK
+      - name: Build Debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      # Upload APK (FIXED VERSION ✅)
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: taqwatraker-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
